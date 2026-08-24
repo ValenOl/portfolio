@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-bg: #0a0e14;
+  --color-grid-line: #131a24;
+  --color-panel: #0d131c;
+  --color-panel-border: #1c2632;
+  --color-ink: #d3dae2;
+  --color-ink-bright: #f2f6fa;
+  --color-ink-muted: #8fa0b3;
+  --color-ink-dim: #4a5a6c;
+  --color-ink-dimmer: #3d4a58;
+  --color-accent: #5ad1ff;
+}
+
+html {
+  background: var(--color-bg);
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  background-image:
+    linear-gradient(var(--color-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-attachment: fixed;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* Conector / camino: línea vertical que "crece" hacia abajo -- ver
+   script GSAP en index.astro, animate scaleY desde transform-origin top.
+   #path-line (el camino continuo de proyectos) reusa esta misma clase. */
+.connector-line {
+  transform-origin: top;
+  transform: scaleY(0);
+}
+
+/* Nodos del camino: pulso sutil constante en los que están LIVE, para
+   que el camino se sienta "vivo" incluso sin scroll. */
+.node-dot {
+  animation: node-pulse 2.6s ease-in-out infinite;
+}
+@keyframes node-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 45%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .node-dot { animation: none; }
+}
+
+body:not(.gsap-ready) [data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+body:not(.gsap-ready) .connector-line {
+  transform: scaleY(1);
+}

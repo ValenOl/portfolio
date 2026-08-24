@@ -1,0 +1,117 @@
+---
+import Layout from '../layouts/Layout.astro'
+import Nav from '../components/Nav.astro'
+import Hero from '../components/Hero.astro'
+import Projects from '../components/Projects.astro'
+import About from '../components/About.astro'
+import Footer from '../components/Footer.astro'
+---
+
+<Layout>
+  <Nav />
+  <main>
+    <Hero />
+    <Projects />
+    <About />
+    <Footer />
+  </main>
+
+  <script>
+    import { gsap } from 'gsap'
+    import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+    gsap.registerPlugin(ScrollTrigger)
+    document.body.classList.add('gsap-ready')
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const heroTargets = gsap.utils.toArray<HTMLElement>('#top [data-reveal]')
+    const restTargets = gsap.utils.toArray<HTMLElement>(
+      '[data-reveal]:not(#top [data-reveal])'
+    )
+    const pathLine = document.getElementById('path-line')
+    const connectors = gsap.utils
+      .toArray<HTMLElement>('.connector-line')
+      .filter((el) => el.id !== 'path-line')
+
+    gsap.set([...heroTargets, ...restTargets], { autoAlpha: 0, y: reduceMotion ? 0 : 18 })
+
+    if (reduceMotion) {
+      gsap.set([...heroTargets, ...restTargets], { autoAlpha: 1, y: 0 })
+      gsap.set([...connectors, pathLine].filter(Boolean), { scaleY: 1 })
+    } else {
+      // Hero entra apenas carga -- stagger corto, sensación de "boot".
+      gsap.to(heroTargets, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.8,
+        ease: 'power3.out',
+        stagger: 0.1,
+        delay: 0.1,
+      })
+
+      // Conectores del hero hacia abajo (los que no dependen de scroll
+      // porque ya están en viewport al cargar).
+      connectors.forEach((line) => {
+        const trigger = line.closest('#top')
+        if (trigger) {
+          gsap.to(line, { scaleY: 1, duration: 0.6, ease: 'power2.out', delay: 0.9 })
+        }
+      })
+
+      // El resto entra por sección -- texto + chips con stagger, el
+      // conector de esa sección "crece" primero para dar sensación de
+      // que el sistema avanza nodo a nodo.
+      const sections = gsap.utils.toArray<HTMLElement>('section')
+      sections.forEach((section) => {
+        const els = restTargets.filter((el) => section.contains(el))
+        if (els.length === 0) return
+
+        gsap.to(els, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.7,
+          ease: 'power3.out',
+          stagger: 0.07,
+          scrollTrigger: { trigger: section, start: 'top 78%', once: true },
+        })
+
+        const sectionConnectors = connectors.filter((c) => section.contains(c))
+        sectionConnectors.forEach((line) => {
+          gsap.to(line, {
+            scaleY: 1,
+            duration: 0.5,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: line, start: 'top 90%', once: true },
+          })
+        })
+      })
+
+      // El camino de proyectos es UNA línea continua que se dibuja a
+      // medida que scrolleás por la sección entera (scrub), no un
+      // conector corto por proyecto -- es la pieza central del pedido
+      // de Valentín de "un camino que se va conectando".
+      if (pathLine) {
+        const wrapper = pathLine.parentElement
+        gsap.to(pathLine, {
+          scaleY: 1,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: wrapper ?? pathLine,
+            start: 'top 75%',
+            end: 'bottom 60%',
+            scrub: 0.6,
+          },
+        })
+      }
+
+      // Parallax sutil del grid de fondo -- se mueve más lento que el
+      // scroll, da sensación de profundidad sin marear.
+      gsap.to('body', {
+        backgroundPosition: '0px 120px',
+        ease: 'none',
+        scrollTrigger: { start: 0, end: 'max', scrub: 1 },
+      })
+    }
+  </script>
+</Layout>

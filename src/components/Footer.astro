@@ -1,0 +1,42 @@
+---
+const EMAIL = 'valenolivero94@gmail.com'
+const links = [
+  { label: 'GitHub', href: 'https://github.com/ValenOl' },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/valentinolivero1' },
+]
+---
+
+<section id="contacto" class="mx-auto max-w-3xl px-6 py-4 sm:px-13">
+  <div class="connector-line ml-6 h-8 w-px bg-gradient-to-b from-accent to-transparent"></div>
+
+  <p data-reveal class="font-mono text-[11px] tracking-[0.14em] text-accent">
+    CONTACT // CONTACTO
+  </p>
+
+  <a
+    data-reveal
+    href={`mailto:${EMAIL}`}
+    class="mt-6 inline-block font-display text-2xl font-semibold text-ink-bright transition-colors hover:text-accent sm:text-4xl"
+  >
+    {EMAIL}
+  </a>
+
+  <div data-reveal class="mt-5 flex gap-6 font-mono text-xs">
+    {
+      links.map((link) => (
+        <a
+          href={link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="tracking-[0.08em] text-ink-muted transition-colors hover:text-ink"
+        >
+          {link.label.toUpperCase()}
+        </a>
+      ))
+    }
+  </div>
+
+  <p class="mt-24 border-t border-panel-border pt-8 pb-16 font-mono text-[11px] text-ink-dimmer">
+    valentín olivero — {new Date().getFullYear()}
+  </p>
+</section>

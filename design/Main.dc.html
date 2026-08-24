@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #0a0e14; color: #d3dae2; font-family: 'Space Grotesk', system-ui, sans-serif;
+      background-image: linear-gradient(#131a24 1px, transparent 1px), linear-gradient(90deg, #131a24 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    a { color: #5ad1ff; text-decoration: none; }
+    a:hover { color: #9de5ff; }
+    .tag { font-size: 10.5px; letter-spacing: 0.14em; color: #5ad1ff; }
+    .panel { position: relative; border: 1px solid #1c2632; background: #0d131c; padding: 22px 24px; margin-top: 18px; }
+    .panel::before, .panel::after { content: ''; position: absolute; width: 10px; height: 10px; border: 1.5px solid #5ad1ff; }
+    .panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+    .panel::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+    .node-name { font-size: 19px; font-weight: 600; color: #f2f6fa; }
+    .node-id { font-size: 10.5px; color: #4a5a6c; }
+    .node-tag { font-size: 13.5px; color: #5ad1ff; margin-top: 6px; }
+    .node-desc { font-size: 13px; line-height: 1.65; color: #8fa0b3; margin-top: 10px; max-width: 560px; }
+    .node-tech { margin-top: 14px; font-size: 10.5px; color: #4a5a6c; display: flex; flex-wrap: wrap; gap: 8px; }
+    .node-tech span { border: 1px solid #1c2632; padding: 3px 8px; }
+    .status-live { color: #5ad1ff; }
+    .status-client { color: #7a8a9c; }
+    .rule { border: none; border-top: 1px dashed #1c2632; margin: 44px 0; }
+    .connector { width: 1px; height: 22px; background: linear-gradient(#5ad1ff, transparent); margin-left: 24px; }
+    .section-head { display: flex; align-items: baseline; gap: 12px; }
+    .skill-chip { border: 1px solid #1c2632; padding: 5px 10px; font-size: 11px; color: #8fa0b3; }
+    .skills-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .link-row { display: flex; gap: 24px; margin-top: 18px; }
+  </style>
+</helmet>
+<div style="padding: 60px 52px; max-width: 720px;">
+
+  <div class="tag">SYSTEM // PORTFOLIO_V1</div>
+  <div style="font-size: 44px; font-weight: 700; color: #f2f6fa; margin-top: 14px; letter-spacing: -0.5px; line-height: 1.1;">
+    Valentín Olivero
+  </div>
+  <div class="mono" style="font-size: 13px; color: #6b7d90; margin-top: 8px;">
+    role: software_engineer &nbsp;|&nbsp; focus: applied_ai
+  </div>
+  <div style="font-size: 17px; color: #b7c2cc; margin-top: 18px; max-width: 500px; line-height: 1.6;">
+    Construyo productos de IA que llegan a producción de verdad — RAG, evals y
+    seguridad de agentes, no demos.
+  </div>
+
+  <div class="connector"></div>
+  <div class="tag">NODES // PROYECTOS</div>
+
+  <div class="panel">
+    <div style="display:flex; justify-content: space-between; align-items: baseline;">
+      <span class="node-name">Vexter</span>
+      <span class="node-id mono">NODE_01</span>
+    </div>
+    <div class="mono status-live" style="font-size: 10.5px; margin-top: 4px;">● STATUS: LIVE — vexter.com.ar</div>
+    <div class="node-tag">Facturación electrónica con IA</div>
+    <div class="node-desc">SaaS en producción para monotributistas argentinos, con usuarios reales y planes pagos. Integra directo con ARCA y emite comprobantes desde una descripción en lenguaje natural — reduce el proceso de 15 minutos a 30 segundos.</div>
+    <div class="node-tech mono"><span>Next.js</span><span>Vercel AI SDK</span><span>OpenAI</span><span>BullMQ</span><span>Prisma</span><span>Clerk</span></div>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="panel">
+    <div style="display:flex; justify-content: space-between; align-items: baseline;">
+      <span class="node-name">Vexter Portfolio</span>
+      <span class="node-id mono">NODE_02</span>
+    </div>
+    <div class="mono status-live" style="font-size: 10.5px; margin-top: 4px;">● STATUS: LIVE — vexter-portfolio.vercel.app</div>
+    <div class="node-tag">Asistente fiscal con RAG y guardrails de seguridad</div>
+    <div class="node-desc">Aplica el mismo patrón de Vexter a un dominio no sensible: retrieval determinístico, un segundo guardrail de IA que verifica grounding contra prompt injection, y una batería de evals real corriendo en CI en cada push.</div>
+    <div class="node-tech mono"><span>Next.js</span><span>Gemini / Vertex AI</span><span>Neon + pgvector</span><span>Promptfoo</span><span>GitHub Actions</span></div>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="panel">
+    <div style="display:flex; justify-content: space-between; align-items: baseline;">
+      <span class="node-name">Forma</span>
+      <span class="node-id mono">NODE_03</span>
+    </div>
+    <div class="mono status-client" style="font-size: 10.5px; margin-top: 4px;">● STATUS: CLIENTE</div>
+    <div class="node-tag">Tour virtual 360° + landing</div>
+    <div class="node-desc">Prototipo para un cliente real de un desarrollo inmobiliario: recorrido interactivo por escenas panorámicas con hotspots, planos de piso navegables, y una landing de marketing con transiciones fluidas entre pantallas.</div>
+    <div class="node-tech mono"><span>Next.js 16</span><span>App Router</span><span>pnpm workspaces</span></div>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="panel">
+    <div style="display:flex; justify-content: space-between; align-items: baseline;">
+      <span class="node-name">ΛPPTO</span>
+      <span class="node-id mono">NODE_04</span>
+    </div>
+    <div class="mono status-live" style="font-size: 10.5px; margin-top: 4px;">● STATUS: LIVE</div>
+    <div class="node-tag">Motor de riesgo crediticio B2B</div>
+    <div class="node-desc">Consulta el historial crediticio de un cliente en segundos, cruzando AFIP y BCRA en un score y dictamen formal, para inmobiliarias, financieras y equipos comerciales.</div>
+    <div class="node-tech mono"><span>Next.js</span><span>Supabase</span><span>Upstash</span><span>Resend</span></div>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="panel">
+    <div style="display:flex; justify-content: space-between; align-items: baseline;">
+      <span class="node-name">AgenData</span>
+      <span class="node-id mono">NODE_05</span>
+    </div>
+    <div class="mono status-live" style="font-size: 10.5px; margin-top: 4px;">● STATUS: LIVE — agendata.net</div>
+    <div class="node-tag">CRM para vendedores y agentes comerciales</div>
+    <div class="node-desc">Centraliza leads, agenda comercial, liquidación de comisiones y gestión de créditos y avales en un sistema modular.</div>
+    <div class="node-tech mono"><span>Next.js</span></div>
+  </div>
+
+  <hr class="rule" />
+
+  <div class="tag">ABOUT // SOBRE_MÍ</div>
+  <div style="font-size: 18px; line-height: 1.6; color: #d3dae2; margin-top: 16px; max-width: 560px;">
+    Vengo del desarrollo de software tradicional. Hoy enfoco mi trabajo en llevar
+    productos de IA a producción de verdad — no solo que el modelo responda bien,
+    sino que lo siga haciendo con datos reales y alguien tratando de romperlo.
+  </div>
+  <div class="skills-row">
+    <span class="skill-chip mono">TypeScript</span>
+    <span class="skill-chip mono">Next.js</span>
+    <span class="skill-chip mono">React</span>
+    <span class="skill-chip mono">Vercel AI SDK</span>
+    <span class="skill-chip mono">RAG</span>
+    <span class="skill-chip mono">Evals</span>
+    <span class="skill-chip mono">Prompt Injection / Redteaming</span>
+    <span class="skill-chip mono">Prisma</span>
+    <span class="skill-chip mono">PostgreSQL</span>
+    <span class="skill-chip mono">pgvector</span>
+  </div>
+
+  <hr class="rule" />
+
+  <div class="tag">CONTACT // CONTACTO</div>
+  <div style="font-size: 26px; font-weight: 600; color: #f2f6fa; margin-top: 16px;">
+    <a href="mailto:valenolivero94@gmail.com">valenolivero94@gmail.com</a>
+  </div>
+  <div class="link-row mono" style="font-size: 13px;">
+    <a href="https://github.com/ValenOl">GitHub</a>
+    <a href="https://www.linkedin.com/in/valentinolivero1">LinkedIn</a>
+  </div>
+
+  <div class="mono" style="font-size: 11px; color: #3d4a58; margin-top: 60px;">
+    // motion: las líneas conectoras se dibujan (stroke-dashoffset) a medida que scrolleás de nodo en nodo, cada panel hace snap-in leve con su esquina brillando un instante, grid de fondo con parallax sutil, el header nav queda fijo con un pequeño indicador de "posición en el sistema" (qué nodo está activo).
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

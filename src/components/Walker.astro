@@ -1,0 +1,267 @@
+---
+import type { Project } from '../data/projects'
+
+interface Props {
+  projects: Project[]
+}
+
+const { projects } = Astro.props
+const captionMap = Object.fromEntries(projects.map((p) => [p.slug, p.caption]))
+---
+
+<div
+  id="walker-root"
+  data-captions={JSON.stringify(captionMap)}
+  class="hidden w-32 flex-col items-center gap-3 sm:flex"
+>
+  <div class="sticky top-36 flex flex-col items-center gap-3">
+    <canvas id="walker-canvas" width="120" height="180" class="h-[180px] w-[120px]"></canvas>
+    <p
+      id="walker-caption"
+      class="min-h-[1.4em] text-center font-mono text-[11px] tracking-[0.08em] text-accent opacity-0 transition-opacity duration-300"
+    >
+    </p>
+  </div>
+</div>
+
+<script>
+  // El caminante es un stick-figure wireframe armado a mano (sin ningún
+  // asset externo -- ver charla con Valentín, un "personaje" 3D rigged
+  // realista necesitaría un modelo importado que no podemos conseguir
+  // ni licenciar acá). Las juntas se dibujan como puntos, iguales en
+  // espíritu a los node-dot del camino, para que se sienta parte del
+  // mismo lenguaje visual del resto del sitio.
+  //
+  // OJO: este script NO usa define:vars a propósito -- define:vars
+  // desactiva el bundling de Vite/Astro (queda como <script> crudo sin
+  // procesar), y entonces el `import('three')` de abajo nunca se
+  // resolvería en el browser (specifier bare, sin import map). Los
+  // datos de captions viajan por un data-attribute en su lugar.
+  async function initWalker() {
+    const root = document.getElementById('walker-root')
+    const canvas = document.getElementById('walker-canvas')
+    const captionEl = document.getElementById('walker-caption')
+    if (!root || !canvas || !(canvas instanceof HTMLCanvasElement)) return
+    const captionMap = JSON.parse(root.dataset.captions ?? '{}')
+
+    let THREE
+    try {
+      THREE = await import('three')
+    } catch {
+      return
+    }
+
+    let renderer
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true })
+    } catch {
+      return
+    }
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const width = 120
+    const height = 180
+    renderer.setSize(width, height, false)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 20)
+    camera.position.set(1.6, 1.2, 3.2)
+    camera.lookAt(0, 0.9, 0)
+
+    const accent = 0x5ad1ff
+
+    // Huesos: pares de índices en el array de juntas de abajo.
+    const bones = [
+      ['hip', 'chest'],
+      ['chest', 'neck'],
+      ['neck', 'head'],
+      ['chest', 'shoulderL'],
+      ['chest', 'shoulderR'],
+      ['shoulderL', 'handL'],
+      ['shoulderR', 'handR'],
+      ['hip', 'hipL'],
+      ['hip', 'hipR'],
+      ['hipL', 'kneeL'],
+      ['kneeL', 'footL'],
+      ['hipR', 'kneeR'],
+      ['kneeR', 'footR'],
+    ]
+
+    // Todo el personaje cuelga de este group -- así la rotación por
+    // mouse-parallax se aplica una sola vez, a todo junto.
+    const figureGroup = new THREE.Group()
+    scene.add(figureGroup)
+
+    const boneGeometry = new THREE.BufferGeometry()
+    const bonePositions = new Float32Array(bones.length * 2 * 3)
+    boneGeometry.setAttribute('position', new THREE.BufferAttribute(bonePositions, 3))
+    const boneMaterial = new THREE.LineBasicMaterial({ color: accent, transparent: true, opacity: 0.9 })
+    const boneLines = new THREE.LineSegments(boneGeometry, boneMaterial)
+    figureGroup.add(boneLines)
+
+    // Juntas "internas" -- las de los extremos (cabeza, manos, pies)
+    // tienen su propia forma más abajo, no se dibujan acá para no
+    // duplicar un punto encima de la forma.
+    const jointNames = ['hip', 'chest', 'neck', 'shoulderL', 'shoulderR', 'hipL', 'hipR', 'kneeL', 'kneeR']
+    const jointGeometry = new THREE.BufferGeometry()
+    const jointPositions = new Float32Array(jointNames.length * 3)
+    jointGeometry.setAttribute('position', new THREE.BufferAttribute(jointPositions, 3))
+    const jointMaterial = new THREE.PointsMaterial({ color: accent, size: 0.06, sizeAttenuation: true })
+    const jointPoints = new THREE.Points(jointGeometry, jointMaterial)
+    figureGroup.add(jointPoints)
+
+    // Extremidades con forma propia -- wireframe, mismo espíritu que el
+    // resto (nada sólido/realista), pero ya se leen como cabeza/mano/pie
+    // en vez de un punto suelto.
+    const wireMat = new THREE.MeshBasicMaterial({ color: accent, wireframe: true })
+    // Icosaedro en vez de esfera UV -- facetado y con pocas líneas, se
+    // lee como wireframe limpio en vez de una bola densa/borrosa.
+    const headMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.15, 0), wireMat)
+    const handL = new THREE.Mesh(new THREE.SphereGeometry(0.065, 6, 4), wireMat)
+    const handR = new THREE.Mesh(new THREE.SphereGeometry(0.065, 6, 4), wireMat)
+    const footL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.26), wireMat)
+    const footR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.26), wireMat)
+    ;[headMesh, handL, handR, footL, footR].forEach((m) => figureGroup.add(m))
+
+    // Cálculo de ciclo de caminata: cinemática directa simplificada
+    // (hombro/cadera -> codo/rodilla -> mano/pie), 2 piernas en
+    // contrafase, brazos en contrafase con la pierna del mismo lado.
+    // A propósito TODO en el plano X/Y (Z=0 fijo en cada junta): con
+    // profundidad variable los brazos terminaban escondidos detrás del
+    // torso desde el ángulo de cámara (hallazgo real mirando el
+    // screenshot) -- de frente, con swing solo en X, se leen bien.
+    function walkCycle(t) {
+      const freq = 2.4
+      const legSwing = 0.55
+      const armSwing = 0.45
+      const thighLen = 0.5
+      const shinLen = 0.5
+      const armLen = 0.68
+
+      const bob = Math.abs(Math.sin(t * freq)) * 0.05
+      const hipY = 1.0 + bob
+
+      const joints = {}
+      joints.hip = [0, hipY, 0]
+      joints.chest = [0, hipY + 0.5, 0]
+      joints.neck = [0, hipY + 0.68, 0]
+      joints.head = [0, hipY + 0.88, 0]
+      joints.shoulderL = [-0.22, hipY + 0.5, 0]
+      joints.shoulderR = [0.22, hipY + 0.5, 0]
+      joints.hipL = [-0.15, hipY, 0]
+      joints.hipR = [0.15, hipY, 0]
+
+      function leg(phase, hipPos) {
+        const swing = Math.sin(t * freq + phase) * legSwing
+        // La rodilla se dobla más cuando la pierna está "recobrando"
+        // (mitad del swing hacia adelante), casi recta al pisar.
+        const bend = Math.max(0, Math.sin(t * freq + phase + Math.PI)) * 0.5
+        const kneeX = hipPos[0] + Math.sin(swing) * thighLen
+        const kneeY = hipPos[1] - Math.cos(swing) * thighLen
+        const footAngle = swing - bend
+        const footX = kneeX + Math.sin(footAngle) * shinLen
+        const footY = Math.max(0.02, kneeY - Math.cos(footAngle) * shinLen)
+        return { knee: [kneeX, kneeY, 0], foot: [footX, footY, 0] }
+      }
+
+      function arm(phase, shoulderPos) {
+        const swing = Math.sin(t * freq + phase) * armSwing
+        const handX = shoulderPos[0] + Math.sin(swing) * armLen
+        const handY = shoulderPos[1] - Math.cos(swing) * armLen
+        return [handX, handY, 0]
+      }
+
+      const legL = leg(0, joints.hipL)
+      const legR = leg(Math.PI, joints.hipR)
+      joints.kneeL = legL.knee
+      joints.footL = legL.foot
+      joints.kneeR = legR.knee
+      joints.footR = legR.foot
+      // Contralateral: el brazo opuesto a cada pierna va en la misma fase.
+      joints.handL = arm(Math.PI, joints.shoulderL)
+      joints.handR = arm(0, joints.shoulderR)
+
+      return joints
+    }
+
+    function applyJoints(joints) {
+      jointNames.forEach((name, i) => {
+        const [x, y, z] = joints[name]
+        jointPositions[i * 3] = x
+        jointPositions[i * 3 + 1] = y - 1
+        jointPositions[i * 3 + 2] = z
+      })
+      jointGeometry.attributes.position.needsUpdate = true
+
+      bones.forEach(([a, b], i) => {
+        const ja = joints[a]
+        const jb = joints[b]
+        bonePositions[i * 6] = ja[0]
+        bonePositions[i * 6 + 1] = ja[1] - 1
+        bonePositions[i * 6 + 2] = ja[2]
+        bonePositions[i * 6 + 3] = jb[0]
+        bonePositions[i * 6 + 4] = jb[1] - 1
+        bonePositions[i * 6 + 5] = jb[2]
+      })
+      boneGeometry.attributes.position.needsUpdate = true
+
+      const at = (name) => joints[name]
+      const place = (mesh, name) => {
+        const [x, y, z] = at(name)
+        mesh.position.set(x, y - 1, z)
+      }
+      place(headMesh, 'head')
+      place(handL, 'handL')
+      place(handR, 'handR')
+      place(footL, 'footL')
+      place(footR, 'footR')
+    }
+
+    let mouseX = 0
+    window.addEventListener(
+      'pointermove',
+      (e) => {
+        mouseX = e.clientX / window.innerWidth - 0.5
+      },
+      { passive: true }
+    )
+
+    const clock = new THREE.Clock()
+
+    function frame() {
+      const t = reduceMotion ? 0 : clock.getElapsedTime()
+      applyJoints(walkCycle(t))
+
+      const targetRotation = mouseX * 0.4
+      figureGroup.rotation.y += (targetRotation - figureGroup.rotation.y) * 0.05
+
+      renderer.render(scene, camera)
+      if (!reduceMotion) requestAnimationFrame(frame)
+    }
+    frame()
+
+    // Caption: qué "nodo" está activo -- mismo patrón de IntersectionObserver
+    // que el indicador de posición del Nav.
+    const stops = document.querySelectorAll('.path-stop')
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && captionEl) {
+            const slug = entry.target.getAttribute('data-slug')
+            const caption = slug ? captionMap[slug] : ''
+            if (caption) {
+              captionEl.textContent = caption
+              captionEl.style.opacity = '1'
+            }
+          }
+        })
+      },
+      { rootMargin: '-40% 0px -40% 0px' }
+    )
+    stops.forEach((el) => observer.observe(el))
+  }
+
+  initWalker()
+</script>

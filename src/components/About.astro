@@ -1,0 +1,41 @@
+---
+const skills = [
+  'TypeScript',
+  'Next.js',
+  'React',
+  'Vercel AI SDK',
+  'RAG',
+  'Evals',
+  'Prompt Injection / Redteaming',
+  'Prisma',
+  'PostgreSQL',
+  'pgvector',
+]
+---
+
+<section id="sobre-mi" class="mx-auto max-w-3xl px-6 py-4 sm:px-13">
+  <div class="connector-line ml-6 h-8 w-px bg-gradient-to-b from-accent to-transparent"></div>
+
+  <p data-reveal class="font-mono text-[11px] tracking-[0.14em] text-accent">
+    ABOUT // SOBRE_MÍ
+  </p>
+
+  <p data-reveal class="mt-6 max-w-xl text-balance text-xl leading-relaxed text-ink">
+    Vengo del desarrollo de software tradicional. Hoy enfoco mi trabajo en llevar
+    productos de IA a producción de verdad —
+    <span class="text-ink-muted">
+      no solo que el modelo responda bien, sino que lo siga haciendo con datos
+      reales y alguien tratando de romperlo.
+    </span>
+  </p>
+
+  <div data-reveal class="mt-8 flex flex-wrap gap-2">
+    {
+      skills.map((skill) => (
+        <span class="border border-panel-border px-3 py-1.5 font-mono text-[11px] text-ink-muted">
+          {skill}
+        </span>
+      ))
+    }
+  </div>
+</section>
