@@ -11,6 +11,17 @@ export type Project = {
   caption: string
 }
 
+/**
+ * Duplicada antes en Projects.astro y [slug].astro como
+ * `status !== 'Cliente'`, sin chequear si links.live existe. Un
+ * proyecto futuro con status 'Producción'/'Portfolio' pero sin
+ * links.live mostraría el badge LIVE con nada para clickear -- acá
+ * exigimos las dos condiciones.
+ */
+export function isProjectLive(project: Project): boolean {
+  return project.status !== 'Cliente' && Boolean(project.links.live)
+}
+
 export const projects: Project[] = [
   {
     slug: 'vexter',

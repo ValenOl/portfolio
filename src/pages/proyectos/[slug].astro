@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro'
-import { projects } from '../../data/projects'
+import { projects, isProjectLive } from '../../data/projects'
 
 export function getStaticPaths() {
   return projects.map((project) => ({
@@ -10,7 +10,7 @@ export function getStaticPaths() {
 }
 
 const { project } = Astro.props
-const isLive = project.status !== 'Cliente'
+const isLive = isProjectLive(project)
 ---
 
 <Layout title={`${project.name} — Valentín Olivero`} description={project.tagline}>
