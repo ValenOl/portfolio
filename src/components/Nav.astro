@@ -9,6 +9,7 @@ const sections = [
 
 <header
   id="site-nav"
+  data-sections={JSON.stringify(sections)}
   class="fixed inset-x-0 top-0 z-50 border-b border-transparent bg-bg/0 transition-colors duration-300"
 >
   <nav class="mx-auto flex max-w-3xl items-center justify-between px-6 py-5 sm:px-13">
@@ -21,34 +22,57 @@ const sections = [
   </nav>
 </header>
 
-<script define:vars={{ sections }}>
-  const nav = document.getElementById('site-nav')
-  const posLabel = document.getElementById('nav-position')
+<script>
+  // Sin define:vars a propósito: define:vars saca el script del bundling
+  // de Astro/Vite y lo deja como <script> crudo que corre en cuanto el
+  // parser lo encuentra -- ANTES de que <main> (con los ids de sections)
+  // exista en el DOM. Los datos viajan por data-attribute en su lugar,
+  // y el setup real corre en astro:page-load (después del swap de la
+  // ClientRouter, con el DOM ya armado).
+  let cleanup: (() => void) | null = null
 
-  const onScroll = () => {
+  function initNav() {
+    cleanup?.()
+
+    const nav = document.getElementById('site-nav')
+    const posLabel = document.getElementById('nav-position')
     if (!nav) return
-    if (window.scrollY > 24) {
-      nav.classList.add('bg-bg/85', 'backdrop-blur-md', 'border-panel-border')
-    } else {
-      nav.classList.remove('bg-bg/85', 'backdrop-blur-md', 'border-panel-border')
+
+    const sections: { id: string; label: string }[] = JSON.parse(nav.dataset.sections ?? '[]')
+    const controller = new AbortController()
+
+    const onScroll = () => {
+      if (window.scrollY > 24) {
+        nav.classList.add('bg-bg/85', 'backdrop-blur-md', 'border-panel-border')
+      } else {
+        nav.classList.remove('bg-bg/85', 'backdrop-blur-md', 'border-panel-border')
+      }
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true, signal: controller.signal })
+
+    const byId = Object.fromEntries(sections.map((s) => [s.id, s.label]))
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && posLabel) {
+            posLabel.textContent = byId[(entry.target as HTMLElement).id] ?? ''
+          }
+        })
+      },
+      { rootMargin: '-45% 0px -45% 0px' }
+    )
+    sections.forEach((s) => {
+      const el = document.getElementById(s.id)
+      if (el) observer.observe(el)
+    })
+
+    cleanup = () => {
+      controller.abort()
+      observer.disconnect()
     }
   }
-  onScroll()
-  window.addEventListener('scroll', onScroll, { passive: true })
 
-  const byId = Object.fromEntries(sections.map((s) => [s.id, s.label]))
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && posLabel) {
-          posLabel.textContent = byId[entry.target.id] ?? ''
-        }
-      })
-    },
-    { rootMargin: '-45% 0px -45% 0px' }
-  )
-  sections.forEach((s) => {
-    const el = document.getElementById(s.id)
-    if (el) observer.observe(el)
-  })
+  document.addEventListener('astro:page-load', initNav)
+  document.addEventListener('astro:before-swap', () => cleanup?.())
 </script>

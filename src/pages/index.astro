@@ -21,8 +21,21 @@ import Footer from '../components/Footer.astro'
     import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
     gsap.registerPlugin(ScrollTrigger)
-    document.body.classList.add('gsap-ready')
 
+    // gsap-ready se agrega recién al final, si TODO el setup de abajo
+    // termina sin tirar -- si algo falla a mitad de camino (ej. el
+    // selector :not() complejo de restTargets en un browser viejo),
+    // el fallback CSS de no-JS/error en global.css (connector-line en
+    // scaleY(1), [data-reveal] en opacity:1) tiene que poder activarse
+    // igual, y eso sólo pasa si el body se queda sin esta clase.
+    try {
+      setupAnimations()
+      document.body.classList.add('gsap-ready')
+    } catch (err) {
+      console.error('[index] animation setup failed, using static fallback', err)
+    }
+
+    function setupAnimations() {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const heroTargets = gsap.utils.toArray<HTMLElement>('#top [data-reveal]')
@@ -112,6 +125,7 @@ import Footer from '../components/Footer.astro'
         ease: 'none',
         scrollTrigger: { start: 0, end: 'max', scrub: 1 },
       })
+    }
     }
   </script>
 </Layout>
