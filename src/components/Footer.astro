@@ -37,6 +37,17 @@ const links = [
   </div>
 
   <p class="mt-24 border-t border-panel-border pt-8 pb-16 font-mono text-[11px] text-ink-dimmer">
-    valentín olivero — {new Date().getFullYear()}
+    valentín olivero — <span id="footer-year">{new Date().getFullYear()}</span>
   </p>
 </section>
+
+<script>
+  // El sitio es static output (sin adapter/SSR), así que
+  // {new Date().getFullYear()} de arriba queda fijo al momento del
+  // build -- si no se rebuildea justo al cambiar el año, muestra el
+  // año viejo. Este script corrige el valor en el cliente sin
+  // necesitar un servidor; el valor de build queda como fallback si
+  // el JS no corre.
+  const yearEl = document.getElementById('footer-year')
+  if (yearEl) yearEl.textContent = String(new Date().getFullYear())
+</script>
