@@ -55,6 +55,33 @@ const captionMap = Object.fromEntries(projects.map((p) => [p.slug, p.caption]))
     if (!root || !canvas || !(canvas instanceof HTMLCanvasElement)) return
     const captionMap = JSON.parse(root.dataset.captions ?? '{}')
 
+    // El caption de texto ("qué nodo está activo") no depende de que
+    // WebGL/Three carguen -- se engancha ACÁ, antes de los early returns
+    // de más abajo, para que un browser sin WebGL siga mostrando el
+    // caption aunque la figura 3D no pueda renderizar.
+    const stops = document.querySelectorAll('.path-stop')
+    const captionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && captionEl) {
+            const slug = entry.target.getAttribute('data-slug')
+            const caption = slug ? captionMap[slug] : ''
+            if (caption) {
+              captionEl.textContent = caption
+              captionEl.style.opacity = '1'
+            }
+          }
+        })
+      },
+      // Mismo rootMargin que el observer de Nav.astro a propósito: los dos
+      // rastrean "cuál es la sección/nodo activo" y tienen que coincidir,
+      // si no el label del nav y el caption del walker cambian en
+      // profundidades de scroll distintas.
+      { rootMargin: '-45% 0px -45% 0px' }
+    )
+    stops.forEach((el) => captionObserver.observe(el))
+    cleanup = () => captionObserver.disconnect()
+
     let THREE
     try {
       THREE = await import('three')
@@ -257,31 +284,11 @@ const captionMap = Object.fromEntries(projects.map((p) => [p.slug, p.caption]))
     }
     frame()
 
-    // Caption: qué "nodo" está activo -- mismo patrón de IntersectionObserver
-    // que el indicador de posición del Nav.
-    const stops = document.querySelectorAll('.path-stop')
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && captionEl) {
-            const slug = entry.target.getAttribute('data-slug')
-            const caption = slug ? captionMap[slug] : ''
-            if (caption) {
-              captionEl.textContent = caption
-              captionEl.style.opacity = '1'
-            }
-          }
-        })
-      },
-      { rootMargin: '-40% 0px -40% 0px' }
-    )
-    stops.forEach((el) => observer.observe(el))
-
     cleanup = () => {
       disposed = true
       if (rafId) cancelAnimationFrame(rafId)
       controller.abort()
-      observer.disconnect()
+      captionObserver.disconnect()
       renderer.dispose()
     }
   }

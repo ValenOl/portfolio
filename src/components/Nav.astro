@@ -60,6 +60,9 @@ const sections = [
           }
         })
       },
+      // Mismo rootMargin que el observer de caption en Walker.astro a
+      // propósito -- si se desincronizan, el label del nav y el caption
+      // del walker cambian de "sección activa" en scrolls distintos.
       { rootMargin: '-45% 0px -45% 0px' }
     )
     sections.forEach((s) => {
