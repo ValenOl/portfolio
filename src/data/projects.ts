@@ -73,3 +73,16 @@ export const projects: Project[] = [
     links: { live: 'https://www.agendata.net' },
   },
 ]
+
+// Un slug repetido rompe en silencio dos consumidores distintos:
+// Walker.astro pierde el caption del primero (captionMap sólo se queda
+// con el último), y getStaticPaths() en [slug].astro genera dos paths
+// idénticos, dejando uno de los dos proyectos inalcanzable sin ningún
+// error que apunte para acá. Mejor romper fuerte en build/dev.
+const seenSlugs = new Set<string>()
+for (const project of projects) {
+  if (seenSlugs.has(project.slug)) {
+    throw new Error(`Duplicate project slug "${project.slug}" in src/data/projects.ts`)
+  }
+  seenSlugs.add(project.slug)
+}
