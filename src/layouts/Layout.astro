@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css'
 import { ClientRouter } from 'astro:transitions'
+import Analytics from '@vercel/analytics/astro'
 
 interface Props {
   title?: string
@@ -11,6 +12,9 @@ const {
   title = 'Valentín Olivero — Software Engineer',
   description = 'Desarrollador de software especializado en llevar productos de IA a producción: RAG, evals y seguridad de agentes.',
 } = Astro.props
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site)
+const ogImageURL = new URL('/og-image.png', Astro.site)
 ---
 
 <!doctype html>
@@ -22,10 +26,20 @@ const {
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#08090c" />
+    <link rel="canonical" href={canonicalURL} />
 
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageURL} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -34,6 +48,7 @@ const {
       rel="stylesheet"
     />
     <ClientRouter />
+    <Analytics />
   </head>
   <body>
     <slot />

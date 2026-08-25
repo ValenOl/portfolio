@@ -1,43 +1,51 @@
-# Astro Starter Kit: Minimal
+# Portfolio — Valentín Olivero
+
+Sitio personal de una sola página con detalle por proyecto (`/proyectos/[slug]`), construido con [Astro](https://astro.build) + Tailwind CSS v4. Estética "terminal/sistema" oscura, con un personaje wireframe (Three.js) que camina por un recorrido de nodos representando cada proyecto, animado con GSAP + ScrollTrigger.
+
+## Stack
+
+- **Astro 7** — static output, sin adapter/SSR
+- **Tailwind CSS v4** (vía plugin de Vite, sin config file)
+- **Three.js** — el "Walker" wireframe (`src/components/Walker.astro`)
+- **GSAP + ScrollTrigger** — reveals y animación del recorrido al hacer scroll
+- **@astrojs/sitemap** — genera `sitemap-index.xml` en build
+- **@vercel/analytics** — analytics del sitio en producción
+
+## Estructura
+
+```
+src/
+├── components/       # Nav, Hero, About, Projects, Walker, Footer
+├── data/
+│   └── projects.ts   # fuente única de verdad para los proyectos mostrados
+├── layouts/
+│   └── Layout.astro  # head, meta tags, fonts, Analytics
+├── pages/
+│   ├── index.astro
+│   ├── robots.txt.ts # generado dinámicamente a partir de `site`
+│   └── proyectos/
+│       └── [slug].astro
+└── styles/
+    └── global.css    # paleta de colores y tokens de Tailwind
+```
+
+Para agregar o editar un proyecto, alcanza con tocar `src/data/projects.ts`: tanto el recorrido del Walker como la grilla de `Projects.astro` y las páginas de detalle se generan desde ahí.
+
+## Desarrollo
 
 ```sh
-npm create astro@latest -- --template minimal
+npm install
+npm run dev       # localhost:4321
+npm run build     # build de producción a ./dist
+npm run preview   # sirve el build de producción localmente
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Si necesitás regenerar la imagen de `og:image` (cambió el nombre, tagline o paleta), corré:
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```sh
+node scripts/generate-og-image.mjs
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Deploy
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Deployado en Vercel (static output). El dominio de producción todavía está pendiente (`is-a.dev` en trámite) — mientras tanto, `astro.config.mjs` usa un placeholder en `site` que hay que actualizar apenas el dominio esté activo.
