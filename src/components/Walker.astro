@@ -37,12 +37,50 @@ const captionMap = Object.fromEntries(projects.map((p) => [p.slug, p.caption]))
   // procesar), y entonces el `import('three')` de abajo nunca se
   // resolvería en el browser (specifier bare, sin import map). Los
   // datos de captions viajan por un data-attribute en su lugar.
+  // La ClientRouter de Astro (view transitions) no vuelve a correr los
+  // <script> de módulo al navegar -- por eso el init cuelga de
+  // astro:page-load (corre en la carga inicial Y en cada swap) en vez
+  // de llamarse directo al final del archivo. El cleanup en
+  // astro:before-swap corta el RAF loop y el listener del canvas viejo
+  // antes de que el swap lo desmonte, para no dejar un loop huérfano
+  // corriendo sobre un canvas que ya no existe.
+  let cleanup: (() => void) | null = null
+
   async function initWalker() {
+    cleanup?.()
+
     const root = document.getElementById('walker-root')
     const canvas = document.getElementById('walker-canvas')
     const captionEl = document.getElementById('walker-caption')
     if (!root || !canvas || !(canvas instanceof HTMLCanvasElement)) return
     const captionMap = JSON.parse(root.dataset.captions ?? '{}')
+
+    // El caption de texto ("qué nodo está activo") no depende de que
+    // WebGL/Three carguen -- se engancha ACÁ, antes de los early returns
+    // de más abajo, para que un browser sin WebGL siga mostrando el
+    // caption aunque la figura 3D no pueda renderizar.
+    const stops = document.querySelectorAll('.path-stop')
+    const captionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && captionEl) {
+            const slug = entry.target.getAttribute('data-slug')
+            const caption = slug ? captionMap[slug] : ''
+            if (caption) {
+              captionEl.textContent = caption
+              captionEl.style.opacity = '1'
+            }
+          }
+        })
+      },
+      // Mismo rootMargin que el observer de Nav.astro a propósito: los dos
+      // rastrean "cuál es la sección/nodo activo" y tienen que coincidir,
+      // si no el label del nav y el caption del walker cambian en
+      // profundidades de scroll distintas.
+      { rootMargin: '-45% 0px -45% 0px' }
+    )
+    stops.forEach((el) => captionObserver.observe(el))
+    cleanup = () => captionObserver.disconnect()
 
     let THREE
     try {
@@ -220,17 +258,21 @@ const captionMap = Object.fromEntries(projects.map((p) => [p.slug, p.caption]))
     }
 
     let mouseX = 0
+    const controller = new AbortController()
     window.addEventListener(
       'pointermove',
       (e) => {
         mouseX = e.clientX / window.innerWidth - 0.5
       },
-      { passive: true }
+      { passive: true, signal: controller.signal }
     )
 
     const clock = new THREE.Clock()
 
+    let rafId = 0
+    let disposed = false
     function frame() {
+      if (disposed) return
       const t = reduceMotion ? 0 : clock.getElapsedTime()
       applyJoints(walkCycle(t))
 
@@ -238,30 +280,19 @@ const captionMap = Object.fromEntries(projects.map((p) => [p.slug, p.caption]))
       figureGroup.rotation.y += (targetRotation - figureGroup.rotation.y) * 0.05
 
       renderer.render(scene, camera)
-      if (!reduceMotion) requestAnimationFrame(frame)
+      if (!reduceMotion) rafId = requestAnimationFrame(frame)
     }
     frame()
 
-    // Caption: qué "nodo" está activo -- mismo patrón de IntersectionObserver
-    // que el indicador de posición del Nav.
-    const stops = document.querySelectorAll('.path-stop')
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && captionEl) {
-            const slug = entry.target.getAttribute('data-slug')
-            const caption = slug ? captionMap[slug] : ''
-            if (caption) {
-              captionEl.textContent = caption
-              captionEl.style.opacity = '1'
-            }
-          }
-        })
-      },
-      { rootMargin: '-40% 0px -40% 0px' }
-    )
-    stops.forEach((el) => observer.observe(el))
+    cleanup = () => {
+      disposed = true
+      if (rafId) cancelAnimationFrame(rafId)
+      controller.abort()
+      captionObserver.disconnect()
+      renderer.dispose()
+    }
   }
 
-  initWalker()
+  document.addEventListener('astro:page-load', initWalker)
+  document.addEventListener('astro:before-swap', () => cleanup?.())
 </script>

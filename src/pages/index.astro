@@ -21,8 +21,37 @@ import Footer from '../components/Footer.astro'
     import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
     gsap.registerPlugin(ScrollTrigger)
-    document.body.classList.add('gsap-ready')
 
+    // Igual que Nav/Walker: la ClientRouter no vuelve a correr este
+    // script en cada navegación, así que el boot cuelga de
+    // astro:page-load. Y como el DOM de esta página se reemplaza en
+    // cada swap, los ScrollTrigger viejos quedan apuntando a elementos
+    // que ya no existen si no los matamos en astro:before-swap --
+    // sin eso se acumulan un set nuevo por cada ciclo home→proyecto→home.
+    function boot() {
+      // gsap-ready se agrega recién al final, si TODO el setup de abajo
+      // termina sin tirar -- si algo falla a mitad de camino (ej. el
+      // selector :not() complejo de restTargets en un browser viejo),
+      // el fallback CSS de no-JS/error en global.css (connector-line en
+      // scaleY(1), [data-reveal] en opacity:1) tiene que poder activarse
+      // igual, y eso sólo pasa si el body se queda sin esta clase.
+      try {
+        setupAnimations()
+        document.body.classList.add('gsap-ready')
+      } catch (err) {
+        console.error('[index] animation setup failed, using static fallback', err)
+      }
+    }
+
+    function teardown() {
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill())
+      document.body.classList.remove('gsap-ready')
+    }
+
+    document.addEventListener('astro:page-load', boot)
+    document.addEventListener('astro:before-swap', teardown)
+
+    function setupAnimations() {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const heroTargets = gsap.utils.toArray<HTMLElement>('#top [data-reveal]')
@@ -112,6 +141,7 @@ import Footer from '../components/Footer.astro'
         ease: 'none',
         scrollTrigger: { start: 0, end: 'max', scrub: 1 },
       })
+    }
     }
   </script>
 </Layout>

@@ -1,5 +1,5 @@
 ---
-import { projects } from '../data/projects'
+import { projects, isProjectLive } from '../data/projects'
 import Walker from './Walker.astro'
 ---
 
@@ -20,7 +20,7 @@ import Walker from './Walker.astro'
 
     {
       projects.map((project, i) => {
-        const isLive = project.status !== 'Cliente'
+        const isLive = isProjectLive(project)
         const nodeId = `NODE_${String(i + 1).padStart(2, '0')}`
         return (
           <div data-reveal data-slug={project.slug} class="path-stop relative pb-16 last:pb-0">
